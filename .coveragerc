@@ -1,0 +1,145 @@
+# Coverage.py configuration for DNA-Origami-AutoEncoder
+
+[run]
+# Source code to measure coverage for
+source = dna_origami_ae
+
+# Files to include in coverage
+include = 
+    dna_origami_ae/*
+    tests/*
+
+# Files to exclude from coverage
+omit =
+    # Test files
+    tests/*
+    # Setup and configuration files
+    setup.py
+    conftest.py
+    # Version file
+    dna_origami_ae/_version.py
+    dna_origami_ae/version.py
+    # __init__ files with only imports
+    dna_origami_ae/__init__.py
+    # Scripts and examples
+    scripts/*
+    examples/*
+    # Experimental/research code
+    experiments/*
+    research/*
+    # Documentation
+    docs/*
+    # Data and models
+    data/*
+    models/*
+    results/*
+    # Build artifacts
+    build/*
+    dist/*
+    *.egg-info/*
+    # Cache and temporary files
+    .tox/*
+    .pytest_cache/*
+    __pycache__/*
+    *.pyc
+    # IDE files
+    .vscode/*
+    .idea/*
+
+# Enable branch coverage
+branch = True
+
+# Show missing lines
+show_missing = True
+
+# Skip empty files
+skip_empty = True
+
+# Skip covered files (only show files with missing coverage)
+skip_covered = False
+
+# Coverage measurement precision
+precision = 2
+
+# Concurrency settings (for parallel testing)
+concurrency = multiprocessing
+
+# Data file location
+data_file = .coverage
+
+# Parallel data file suffix
+parallel = True
+
+[report]
+# Reporting options
+show_missing = True
+skip_covered = False
+skip_empty = True
+sort = Cover
+precision = 2
+
+# Exclude lines from coverage reporting
+exclude_lines =
+    # Standard pragma
+    pragma: no cover
+    
+    # Don't complain about missing debug-only code
+    def __repr__
+    if self\.debug
+    
+    # Don't complain if tests don't hit defensive assertion code
+    raise AssertionError
+    raise NotImplementedError
+    
+    # Don't complain if non-runnable code isn't run
+    if 0:
+    if False:
+    if __name__ == .__main__.:
+    
+    # Don't complain about abstract methods
+    @(abc\.)?abstractmethod
+    
+    # Don't complain about type checking imports
+    if TYPE_CHECKING:
+    
+    # Don't complain about platform specific code
+    if sys.platform
+    
+    # Don't complain about Python version specific code
+    if sys.version_info
+    
+    # Don't complain about import errors in optional dependencies
+    except ImportError:
+    except ModuleNotFoundError:
+    
+    # Don't complain about logging statements
+    logger\.debug
+    logger\.info
+    logger\.warning
+    logger\.error
+    logger\.critical
+    
+    # Don't complain about pass statements
+    pass
+    
+    # Don't complain about ellipsis in type stubs
+    \.\.\.
+
+# Minimum coverage percentage for each file
+fail_under = 80
+
+[html]
+# HTML report configuration
+directory = htmlcov
+title = DNA-Origami-AutoEncoder Coverage Report
+show_contexts = True
+
+[xml]
+# XML report configuration
+output = coverage.xml
+
+[json]
+# JSON report configuration
+output = coverage.json
+pretty_print = True
+show_contexts = True
