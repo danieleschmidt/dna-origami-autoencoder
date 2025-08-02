@@ -1,0 +1,61 @@
+# Global code owners
+* @danieleschmidt
+
+# Documentation
+/docs/ @danieleschmidt
+README.md @danieleschmidt
+CONTRIBUTING.md @danieleschmidt
+SECURITY.md @danieleschmidt
+
+# Core algorithms and models
+/dna_origami_ae/encoding/ @danieleschmidt
+/dna_origami_ae/decoding/ @danieleschmidt
+/dna_origami_ae/design/ @danieleschmidt
+/dna_origami_ae/simulation/ @danieleschmidt
+
+# Testing infrastructure
+/tests/ @danieleschmidt
+pytest.ini @danieleschmidt
+.coveragerc @danieleschmidt
+
+# CI/CD and automation
+/.github/ @danieleschmidt
+/scripts/ @danieleschmidt
+Dockerfile @danieleschmidt
+docker-compose.yml @danieleschmidt
+Makefile @danieleschmidt
+
+# Configuration files
+pyproject.toml @danieleschmidt
+requirements*.txt @danieleschmidt
+environment*.yml @danieleschmidt
+.gitignore @danieleschmidt
+
+# Development environment
+/.devcontainer/ @danieleschmidt
+/.vscode/ @danieleschmidt
+.editorconfig @danieleschmidt
+.pre-commit-config.yaml @danieleschmidt
+
+# Security and dependencies
+SECURITY.md @danieleschmidt
+safety-*.json @danieleschmidt
+bandit.yml @danieleschmidt
+
+# Research and experimental code
+/experiments/ @danieleschmidt
+/notebooks/ @danieleschmidt
+
+# Data and models (require special attention)
+/data/ @danieleschmidt
+/models/ @danieleschmidt
+
+# Monitoring and observability
+/docs/monitoring/ @danieleschmidt
+/docs/runbooks/ @danieleschmidt
+
+# Package management
+setup.py @danieleschmidt
+setup.cfg @danieleschmidt
+pyproject.toml @danieleschmidt
+MANIFEST.in @danieleschmidt
