@@ -1,0 +1,62 @@
+# Molecular Dynamics Dependencies
+# Install with: pip install -r requirements/md.txt
+
+# Include base requirements
+-r ../requirements.txt
+
+# Core MD analysis
+mdanalysis>=2.0.0,<3.0.0
+nglview>=3.0.0,<4.0.0
+pytraj>=2.0.0,<3.0.0
+prody>=2.3.0,<3.0.0
+
+# Structure analysis
+pymol-open-source>=2.5.0,<3.0.0
+pdbfixer>=1.8.0,<2.0.0
+biotite>=0.36.0,<1.0.0
+
+# Trajectory analysis
+mdtraj>=1.9.0,<2.0.0
+pyemma>=2.5.0,<3.0.0
+
+# Force field and simulation setup
+openmm>=7.7.0,<8.0.0
+pdbfixer>=1.8.0,<2.0.0
+openff-toolkit>=0.11.0,<1.0.0
+
+# Enhanced sampling methods
+plumed>=2.8.0,<3.0.0
+metadynminer>=0.1.0,<1.0.0
+
+# Coarse-grained modeling
+martini-py>=0.1.0,<1.0.0
+cgmap>=1.0.0,<2.0.0
+
+# Visualization and analysis
+py3dmol>=2.0.0,<3.0.0
+plotly>=5.0.0,<6.0.0
+ipyvolume>=0.6.0,<1.0.0
+
+# Thermodynamic analysis
+alchemlyb>=1.0.0,<2.0.0
+pymbar>=4.0.0,<5.0.0
+
+# Machine learning for MD
+deepmd-kit>=2.2.0,<3.0.0
+torch-geometric>=2.3.0,<3.0.0
+
+# File format support
+h5py>=3.1.0,<4.0.0
+netcdf4>=1.5.0,<2.0.0
+hdf5storage>=0.1.18,<1.0.0
+
+# Parallel processing for MD
+mpi4py>=3.1.0,<4.0.0
+dask[complete]>=2022.7.0,<2025.0.0
+
+# Specialized analysis tools
+contact-map>=0.7.0,<1.0.0
+mdciao>=0.0.20,<1.0.0
+
+# GPU-accelerated libraries
+cupy-cuda12x>=11.0.0,<13.0.0; sys_platform=="linux"

@@ -1,0 +1,325 @@
+# DNA-Origami-AutoEncoder Docker Compose Configuration
+# Provides complete development and deployment environment
+
+version: '3.8'
+
+services:
+  # =============================================================================
+  # Main Application Service
+  # =============================================================================
+  dna-origami-ae:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+      args:
+        - BUILDKIT_INLINE_CACHE=1
+    image: dna-origami-ae:latest
+    container_name: dna-origami-ae-app
+    restart: unless-stopped
+    ports:
+      - "8888:8888"  # Jupyter Lab
+      - "6006:6006"  # TensorBoard
+      - "8080:8080"  # Application API
+    volumes:
+      - ./data:/app/data
+      - ./models:/app/models
+      - ./results:/app/results
+      - ./logs:/app/logs
+      - ./notebooks:/app/notebooks
+    environment:
+      - PYTHONPATH=/app
+      - DNA_ORIGAMI_AE_ENV=production
+      - CUDA_VISIBLE_DEVICES=0
+    env_file:
+      - .env
+    depends_on:
+      - redis
+      - postgres
+    networks:
+      - dna-origami-network
+    healthcheck:
+      test: ["CMD", "python", "-c", "import dna_origami_ae; print('OK')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # =============================================================================
+  # Development Service
+  # =============================================================================
+  dna-origami-ae-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    image: dna-origami-ae:dev
+    container_name: dna-origami-ae-dev
+    ports:
+      - "8889:8888"  # Jupyter Lab (different port for dev)
+      - "6007:6006"  # TensorBoard
+    volumes:
+      - .:/app
+      - dna-origami-conda:/opt/conda
+      - dna-origami-cache:/home/dnaorigami/.cache
+    environment:
+      - PYTHONPATH=/app
+      - DNA_ORIGAMI_AE_ENV=development
+      - JUPYTER_ENABLE_LAB=yes
+    env_file:
+      - .env
+    command: jupyter lab --ip=0.0.0.0 --port=8888 --no-browser --allow-root
+    networks:
+      - dna-origami-network
+    profiles:
+      - dev
+
+  # =============================================================================
+  # GPU-Enabled Service
+  # =============================================================================
+  dna-origami-ae-gpu:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: gpu
+    image: dna-origami-ae:gpu
+    container_name: dna-origami-ae-gpu
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+      - CUDA_VISIBLE_DEVICES=0
+    volumes:
+      - ./data:/app/data
+      - ./models:/app/models
+      - ./results:/app/results
+    env_file:
+      - .env
+    networks:
+      - dna-origami-network
+    profiles:
+      - gpu
+
+  # =============================================================================
+  # Testing Service
+  # =============================================================================
+  dna-origami-ae-test:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: testing
+    image: dna-origami-ae:test
+    container_name: dna-origami-ae-test
+    volumes:
+      - .:/app
+      - test-results:/app/test-results
+    environment:
+      - PYTHONPATH=/app
+      - DNA_ORIGAMI_AE_ENV=testing
+    command: pytest --cov=dna_origami_ae --cov-report=xml --cov-report=term-missing
+    networks:
+      - dna-origami-network
+    profiles:
+      - test
+
+  # =============================================================================
+  # Supporting Services
+  # =============================================================================
+  
+  # Redis for caching and task queues
+  redis:
+    image: redis:7-alpine
+    container_name: dna-origami-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes
+    networks:
+      - dna-origami-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # PostgreSQL for metadata and results storage
+  postgres:
+    image: postgres:15-alpine
+    container_name: dna-origami-postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=dna_origami_ae
+      - POSTGRES_USER=dna_origami
+      - POSTGRES_PASSWORD=secure_password_change_me
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    networks:
+      - dna-origami-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dna_origami -d dna_origami_ae"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # MinIO for object storage (S3-compatible)
+  minio:
+    image: minio/minio:latest
+    container_name: dna-origami-minio
+    restart: unless-stopped
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      - MINIO_ROOT_USER=minioadmin
+      - MINIO_ROOT_PASSWORD=minioadmin123
+    volumes:
+      - minio-data:/data
+    command: server /data --console-address ":9001"
+    networks:
+      - dna-origami-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Prometheus for metrics collection
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: dna-origami-prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    networks:
+      - dna-origami-network
+    profiles:
+      - monitoring
+
+  # Grafana for metrics visualization
+  grafana:
+    image: grafana/grafana:latest
+    container_name: dna-origami-grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin123
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources
+    networks:
+      - dna-origami-network
+    profiles:
+      - monitoring
+
+  # Jaeger for distributed tracing
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: dna-origami-jaeger
+    restart: unless-stopped
+    ports:
+      - "16686:16686"  # Jaeger UI
+      - "14268:14268"  # Jaeger collector
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+    networks:
+      - dna-origami-network
+    profiles:
+      - monitoring
+
+  # =============================================================================
+  # Utility Services
+  # =============================================================================
+
+  # Jupyter notebook service for experimentation
+  jupyter:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    image: dna-origami-ae:dev
+    container_name: dna-origami-jupyter
+    ports:
+      - "8890:8888"
+    volumes:
+      - ./notebooks:/app/notebooks
+      - ./data:/app/data
+      - ./models:/app/models
+      - ./results:/app/results
+    environment:
+      - PYTHONPATH=/app
+      - JUPYTER_ENABLE_LAB=yes
+    command: jupyter lab --ip=0.0.0.0 --port=8888 --no-browser --allow-root
+    networks:
+      - dna-origami-network
+    profiles:
+      - jupyter
+
+  # TensorBoard service for experiment tracking
+  tensorboard:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    image: dna-origami-ae:latest
+    container_name: dna-origami-tensorboard
+    ports:
+      - "6008:6006"
+    volumes:
+      - ./logs/tensorboard:/app/logs/tensorboard
+    command: tensorboard --logdir=/app/logs/tensorboard --host=0.0.0.0 --port=6006
+    networks:
+      - dna-origami-network
+    profiles:
+      - tensorboard
+
+# =============================================================================
+# Networks
+# =============================================================================
+networks:
+  dna-origami-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+# =============================================================================
+# Volumes
+# =============================================================================
+volumes:
+  # Application data
+  dna-origami-conda:
+    driver: local
+  dna-origami-cache:
+    driver: local
+  test-results:
+    driver: local
+
+  # Database storage
+  postgres-data:
+    driver: local
+  redis-data:
+    driver: local
+  minio-data:
+    driver: local
+
+  # Monitoring data
+  prometheus-data:
+    driver: local
+  grafana-data:
+    driver: local
