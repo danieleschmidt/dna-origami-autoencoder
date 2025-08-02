@@ -1,0 +1,72 @@
+{
+  "name": "dna-origami-autoencoder",
+  "version": "0.1.0",
+  "description": "A groundbreaking wet-lab ML framework that encodes images into self-assembling DNA origami structures",
+  "main": "index.js",
+  "scripts": {
+    "test": "python -m pytest tests/",
+    "test:unit": "python -m pytest tests/unit/",
+    "test:integration": "python -m pytest tests/integration/",
+    "test:performance": "python -m pytest tests/performance/",
+    "test:coverage": "python -m pytest --cov=dna_origami_ae --cov-report=html --cov-report=term-missing tests/",
+    "test:watch": "python -m pytest-watch tests/",
+    "lint": "python -m flake8 dna_origami_ae/ tests/",
+    "lint:fix": "python -m black dna_origami_ae/ tests/ && python -m isort dna_origami_ae/ tests/",
+    "typecheck": "python -m mypy dna_origami_ae/",
+    "format": "python -m black dna_origami_ae/ tests/",
+    "format:check": "python -m black --check dna_origami_ae/ tests/",
+    "isort": "python -m isort dna_origami_ae/ tests/",
+    "isort:check": "python -m isort --check-only dna_origami_ae/ tests/",
+    "security": "python -m bandit -r dna_origami_ae/",
+    "safety": "python -m safety check",
+    "build": "python -m build",
+    "build:docs": "cd docs && make html",
+    "serve:docs": "cd docs/_build/html && python -m http.server 8000",
+    "clean": "rm -rf build/ dist/ *.egg-info/ .pytest_cache/ .mypy_cache/ __pycache__/ .coverage htmlcov/",
+    "clean:data": "find data/ -name '*.tmp' -delete && find data/ -name '*.cache' -delete",
+    "clean:models": "find models/ -name '*.tmp' -delete",
+    "clean:logs": "rm -rf logs/*.log",
+    "clean:all": "npm run clean && npm run clean:data && npm run clean:models && npm run clean:logs",
+    "dev": "python -m jupyter lab --ip=0.0.0.0 --port=8888 --no-browser --allow-root",
+    "notebook": "python -m jupyter notebook --ip=0.0.0.0 --port=8888 --no-browser --allow-root",
+    "tensorboard": "python -m tensorboard.main --logdir=logs/tensorboard --host=0.0.0.0 --port=6006",
+    "setup": "python -m pip install -e .[dev]",
+    "setup:conda": "conda env create -f environment.yml",
+    "setup:pre-commit": "python -m pre_commit install",
+    "update": "python -m pip install -U -e .[dev]",
+    "benchmark": "python scripts/benchmark.py",
+    "profile": "python -m cProfile -o profile.prof scripts/profile_target.py",
+    "validate": "npm run lint && npm run typecheck && npm run test && npm run security",
+    "precommit": "npm run format && npm run lint && npm run typecheck && npm run test:unit",
+    "docker:build": "docker build -t dna-origami-ae .",
+    "docker:run": "docker run -it --gpus all -p 8888:8888 -p 6006:6006 dna-origami-ae",
+    "docker:shell": "docker run -it --gpus all -v $(pwd):/workspace dna-origami-ae bash"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/danieleschmidt/dna-origami-autoencoder.git"
+  },
+  "keywords": [
+    "dna",
+    "origami",
+    "machine-learning",
+    "biocomputing",
+    "synthetic-biology",
+    "nanotechnology",
+    "information-storage",
+    "neural-networks",
+    "molecular-dynamics",
+    "bioinformatics"
+  ],
+  "author": "Daniel Schmidt",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/danieleschmidt/dna-origami-autoencoder/issues"
+  },
+  "homepage": "https://github.com/danieleschmidt/dna-origami-autoencoder#readme",
+  "devDependencies": {},
+  "engines": {
+    "node": ">=14.0.0",
+    "npm": ">=6.0.0"
+  }
+}

@@ -1,0 +1,175 @@
+{
+  "name": "DNA-Origami-AutoEncoder Development",
+  "image": "mcr.microsoft.com/devcontainers/python:1-3.11-bullseye",
+  
+  "features": {
+    "ghcr.io/devcontainers/features/common-utils:2": {
+      "installZsh": true,
+      "configureZshAsDefaultShell": true,
+      "installOhMyZsh": true,
+      "upgradePackages": true,
+      "username": "vscode",
+      "userUid": "automatic",
+      "userGid": "automatic"
+    },
+    "ghcr.io/devcontainers/features/git:1": {
+      "ppa": true,
+      "version": "os-provided"
+    },
+    "ghcr.io/devcontainers/features/git-lfs:1": {},
+    "ghcr.io/devcontainers/features/github-cli:1": {
+      "installDirectlyFromGitHubRelease": true,
+      "version": "latest"
+    },
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {
+      "moby": true,
+      "azureDnsAutoDetection": true,
+      "installDockerBuildx": true,
+      "version": "latest",
+      "dockerDashComposeVersion": "v2"
+    },
+    "ghcr.io/devcontainers/features/cuda:1": {
+      "installToolkit": true,
+      "installcuDNN": true,
+      "cudaVersion": "12.0",
+      "cudnnVersion": "8.9.7.29"
+    }
+  },
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "ms-python.black-formatter",
+        "ms-python.flake8",
+        "ms-python.mypy-type-checker",
+        "ms-toolsai.jupyter",
+        "ms-toolsai.vscode-jupyter-cell-tags",
+        "ms-toolsai.vscode-jupyter-slideshow",
+        "charliermarsh.ruff",
+        "ms-vscode.makefile-tools",
+        "redhat.vscode-yaml",
+        "yzhang.markdown-all-in-one",
+        "shd101wyy.markdown-preview-enhanced",
+        "streetsidesoftware.code-spell-checker",
+        "ms-vscode.vscode-json",
+        "ms-azuretools.vscode-docker",
+        "GitHub.copilot",
+        "GitHub.copilot-chat",
+        "GitHub.vscode-pull-request-github",
+        "eamodio.gitlens",
+        "DavidAnson.vscode-markdownlint",
+        "ms-vscode.test-adapter-converter",
+        "littlefoxteam.vscode-python-test-adapter",
+        "njpwerner.autodocstring",
+        "kevinrose.vsc-python-indent",
+        "visualstudioexptteam.vscodeintellicode",
+        "ms-python.debugpy"
+      ],
+      "settings": {
+        "python.defaultInterpreterPath": "/usr/local/bin/python",
+        "python.linting.enabled": true,
+        "python.linting.pylintEnabled": false,
+        "python.linting.flake8Enabled": true,
+        "python.linting.mypyEnabled": true,
+        "python.formatting.provider": "black",
+        "python.formatting.blackArgs": ["--line-length=88"],
+        "python.linting.flake8Args": ["--max-line-length=88", "--extend-ignore=E203,W503"],
+        "python.testing.pytestEnabled": true,
+        "python.testing.unittestEnabled": false,
+        "python.testing.pytestArgs": [
+          "tests"
+        ],
+        "jupyter.askForKernelRestart": false,
+        "jupyter.interactiveWindow.creationMode": "perFile",
+        "files.exclude": {
+          "**/__pycache__": true,
+          "**/*.pyc": true,
+          "**/.pytest_cache": true,
+          "**/.mypy_cache": true,
+          "**/node_modules": true,
+          "**/.git": false
+        },
+        "files.watcherExclude": {
+          "**/__pycache__/**": true,
+          "**/.pytest_cache/**": true,
+          "**/.mypy_cache/**": true,
+          "**/data/raw/**": true,
+          "**/data/processed/**": true
+        },
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+          "source.organizeImports": true
+        },
+        "editor.rulers": [88],
+        "markdown.preview.fontSize": 14,
+        "markdown.preview.lineHeight": 1.6,
+        "cSpell.words": [
+          "origami",
+          "autoencoder",
+          "staples",
+          "oxDNA",
+          "biomolecular",
+          "nanoscale",
+          "bioinformatics",
+          "nucleotides",
+          "genomics",
+          "biotechnology",
+          "nanotechnology",
+          "cuda",
+          "pytorch",
+          "tensorflow",
+          "conda",
+          "mamba",
+          "jupyter",
+          "matplotlib",
+          "numpy",
+          "scipy",
+          "scikit",
+          "biopython",
+          "mdanalysis"
+        ]
+      }
+    }
+  },
+
+  "containerEnv": {
+    "PYTHONPATH": "/workspaces/dna-origami-autoencoder",
+    "CUDA_VISIBLE_DEVICES": "0",
+    "TZ": "UTC"
+  },
+
+  "remoteEnv": {
+    "PATH": "${containerEnv:PATH}:/usr/local/cuda/bin",
+    "LD_LIBRARY_PATH": "/usr/local/cuda/lib64:${containerEnv:LD_LIBRARY_PATH}"
+  },
+
+  "mounts": [
+    "source=dna-origami-ae-conda,target=/opt/conda,type=volume",
+    "source=dna-origami-ae-cache,target=/home/vscode/.cache,type=volume"
+  ],
+
+  "postCreateCommand": "bash .devcontainer/post-create.sh",
+
+  "forwardPorts": [8888, 6006, 8080],
+  "portsAttributes": {
+    "8888": {
+      "label": "Jupyter Lab",
+      "onAutoForward": "notify"
+    },
+    "6006": {
+      "label": "TensorBoard",
+      "onAutoForward": "ignore"
+    },
+    "8080": {
+      "label": "Development Server",
+      "onAutoForward": "ignore"
+    }
+  },
+
+  "remoteUser": "vscode",
+  "workspaceFolder": "/workspaces/dna-origami-autoencoder",
+
+  "shutdownAction": "stopContainer"
+}
