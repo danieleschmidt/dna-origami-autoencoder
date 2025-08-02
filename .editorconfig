@@ -1,0 +1,104 @@
+# EditorConfig is awesome: https://EditorConfig.org
+
+# top-most EditorConfig file
+root = true
+
+# Default settings for all files
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 2
+
+# Python files
+[*.py]
+indent_size = 4
+max_line_length = 88
+
+# Jupyter notebooks
+[*.ipynb]
+indent_size = 2
+
+# Configuration files
+[*.{json,yml,yaml}]
+indent_size = 2
+
+# Markdown files
+[*.md]
+trim_trailing_whitespace = false
+max_line_length = 80
+
+# Shell scripts
+[*.{sh,bash}]
+indent_size = 2
+
+# Makefiles
+[{Makefile,*.mk}]
+indent_style = tab
+indent_size = 4
+
+# Docker files
+[{Dockerfile,*.dockerfile}]
+indent_size = 2
+
+# HTML files
+[*.html]
+indent_size = 2
+
+# CSS files
+[*.css]
+indent_size = 2
+
+# JavaScript/TypeScript files
+[*.{js,ts,jsx,tsx}]
+indent_size = 2
+
+# XML files
+[*.xml]
+indent_size = 2
+
+# TOML files
+[*.toml]
+indent_size = 2
+
+# INI files
+[*.ini]
+indent_size = 2
+
+# Batch files (Windows)
+[*.bat]
+end_of_line = crlf
+
+# R files
+[*.{r,R}]
+indent_size = 2
+
+# Julia files
+[*.jl]
+indent_size = 4
+
+# MATLAB files
+[*.m]
+indent_size = 2
+
+# LaTeX files
+[*.{tex,bib}]
+indent_size = 2
+max_line_length = 100
+
+# Data files - no formatting
+[*.{csv,tsv,dat,txt}]
+insert_final_newline = false
+trim_trailing_whitespace = false
+
+# Binary files - no formatting
+[*.{png,jpg,jpeg,gif,ico,pdf,zip,tar,gz,bz2,7z}]
+insert_final_newline = false
+trim_trailing_whitespace = false
+
+# Large data files - no formatting
+[*.{h5,hdf5,nc,npy,npz}]
+insert_final_newline = false
+trim_trailing_whitespace = false
