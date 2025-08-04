@@ -649,7 +649,7 @@ cellular_origami = in_vivo.adapt_design(
 ```bibtex
 @article{dna_origami_autoencoder,
   title={DNA-Origami-AutoEncoder: Self-Assembling Biological Information Storage},
-  author={Your Name},
+  author={Daniel Schmidt},
   journal={Nature Biotechnology},
   year={2025},
   doi={10.1038/nbt.2025.example}
