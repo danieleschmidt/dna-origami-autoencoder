@@ -1,8 +1,122 @@
-# 🚀 Deployment Guide
+# DNA Origami AutoEncoder - Production Deployment Guide
 
-## DNA Origami AutoEncoder Deployment
+## 🚀 Quick Deployment
 
-### Prerequisites
+### Container Deployment (Recommended)
+
+```bash
+# Pull the latest image
+docker pull dna-origami-ae:latest
+
+# Run with basic configuration
+docker run -d \
+  --name dna-origami-ae \
+  -p 8000:8000 \
+  -e GPU_ENABLED=true \
+  -e WORKERS=4 \
+  --gpus all \
+  dna-origami-ae:latest
+
+# Check status
+curl http://localhost:8000/api/v1/health
+```
+
+### Kubernetes Deployment
+
+```yaml
+# deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dna-origami-ae
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: dna-origami-ae
+  template:
+    metadata:
+      labels:
+        app: dna-origami-ae
+    spec:
+      containers:
+      - name: dna-origami-ae
+        image: dna-origami-ae:latest
+        ports:
+        - containerPort: 8000
+        env:
+        - name: GPU_ENABLED
+          value: "true"
+        - name: COMPLIANCE_MODE
+          value: "strict"
+        resources:
+          requests:
+            nvidia.com/gpu: 1
+            memory: 8Gi
+            cpu: 4
+          limits:
+            nvidia.com/gpu: 1
+            memory: 16Gi
+            cpu: 8
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dna-origami-ae-service
+spec:
+  selector:
+    app: dna-origami-ae
+  ports:
+  - port: 80
+    targetPort: 8000
+  type: LoadBalancer
+```
+
+## 🔧 Configuration
+
+### Environment Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `GPU_ENABLED` | `true` | Enable GPU acceleration |
+| `WORKERS` | `4` | Number of worker processes |
+| `LOG_LEVEL` | `INFO` | Logging level |
+| `COMPLIANCE_MODE` | `standard` | Compliance enforcement level |
+| `CACHE_BACKEND` | `redis` | Cache backend (redis/memory) |
+| `DATABASE_URL` | `sqlite:///db.sqlite` | Database connection |
+
+### Production Configuration
+
+```yaml
+# config/production.yaml
+server:
+  host: "0.0.0.0"
+  port: 8000
+  workers: 8
+  
+gpu:
+  enabled: true
+  devices: ["cuda:0", "cuda:1"]
+  mixed_precision: true
+
+compliance:
+  gdpr_enabled: true
+  ccpa_enabled: true
+  pdpa_enabled: true
+  audit_retention_days: 2190
+  
+monitoring:
+  metrics_enabled: true
+  health_checks_enabled: true
+  performance_profiling: true
+
+security:
+  api_key_required: true
+  rate_limiting: true
+  cors_origins: ["https://yourdomain.com"]
+```
+
+## Prerequisites
 
 #### System Requirements
 

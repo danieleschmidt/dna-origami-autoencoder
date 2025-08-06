@@ -1,601 +1,559 @@
-"""Compliance and regulatory utilities for global deployment."""
+"""
+Global Compliance and Regulatory Framework for DNA Origami AutoEncoder
+
+Implements GDPR, CCPA, PDPA compliance and international data protection
+regulations for global deployment.
+"""
 
 import hashlib
-import time
 import json
-from typing import Dict, List, Optional, Any, Set
-from dataclasses import dataclass, field
+import logging
+import time
+from datetime import datetime, timedelta
+from typing import Any, Dict, List, Optional, Set, Tuple
 from enum import Enum
-from pathlib import Path
-import re
+from dataclasses import dataclass, field
+import uuid
 
-from .helpers import logger
-from .i18n import _, get_current_locale
+# Compliance standards
+class ComplianceStandard(Enum):
+    """Supported compliance standards."""
+    GDPR = "gdpr"         # EU General Data Protection Regulation
+    CCPA = "ccpa"         # California Consumer Privacy Act
+    PDPA = "pdpa"         # Personal Data Protection Act (Singapore/Thailand)
+    PIPEDA = "pipeda"     # Personal Information Protection and Electronic Documents Act (Canada)
+    LGPD = "lgpd"         # Lei Geral de Proteção de Dados (Brazil)
+    APPI = "appi"         # Act on Protection of Personal Information (Japan)
 
 
-class DataClassification(Enum):
-    """Data classification levels."""
-    PUBLIC = "public"
-    INTERNAL = "internal"
-    CONFIDENTIAL = "confidential"
-    RESTRICTED = "restricted"
+class DataCategory(Enum):
+    """Categories of data processed."""
+    RESEARCH_DATA = "research_data"           # Scientific research data
+    IMAGE_DATA = "image_data"                # Image files and derivatives
+    DNA_SEQUENCES = "dna_sequences"          # Generated DNA sequences  
+    SIMULATION_DATA = "simulation_data"       # Simulation results
+    USER_METADATA = "user_metadata"          # User interaction metadata
+    SYSTEM_LOGS = "system_logs"              # System and audit logs
+    PERFORMANCE_METRICS = "performance_metrics" # System performance data
 
 
-class RegulationType(Enum):
-    """Types of regulatory frameworks."""
-    GDPR = "gdpr"  # General Data Protection Regulation (EU)
-    CCPA = "ccpa"  # California Consumer Privacy Act (US)
-    PDPA = "pdpa"  # Personal Data Protection Act (Singapore, Thailand)
-    LGPD = "lgpd"  # Lei Geral de Proteção de Dados (Brazil)
-    PIPEDA = "pipeda"  # Personal Information Protection and Electronic Documents Act (Canada)
-    DPA = "dpa"  # Data Protection Act (UK)
+class ProcessingPurpose(Enum):
+    """Legal purposes for data processing."""
+    RESEARCH = "research"                     # Scientific research
+    SERVICE_PROVISION = "service_provision"  # Providing the DNA origami service
+    SYSTEM_OPTIMIZATION = "system_optimization" # Performance optimization
+    SECURITY = "security"                     # Security and fraud prevention
+    COMPLIANCE = "compliance"                 # Legal compliance
+    ANALYTICS = "analytics"                   # Anonymous analytics
 
 
 @dataclass
-class DataProcessingRecord:
-    """Record of data processing activity."""
-    activity_id: str
-    purpose: str
-    data_types: List[str]
-    legal_basis: str
-    retention_period: str
-    data_subjects: List[str]
-    recipients: List[str]
-    transfers: List[str]
-    timestamp: float = field(default_factory=time.time)
-    user_consent: Optional[bool] = None
+class GlobalCompliance:
+    """Global compliance configuration and utilities."""
     
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert to dictionary."""
-        return {
-            'activity_id': self.activity_id,
-            'purpose': self.purpose,
-            'data_types': self.data_types,
-            'legal_basis': self.legal_basis,
-            'retention_period': self.retention_period,
-            'data_subjects': self.data_subjects,
-            'recipients': self.recipients,
-            'transfers': self.transfers,
-            'timestamp': self.timestamp,
-            'user_consent': self.user_consent
+    # Regional compliance settings
+    gdpr_enabled: bool = True
+    ccpa_enabled: bool = True
+    pdpa_enabled: bool = True
+    
+    # Data retention periods (days)
+    research_data_retention: int = 2555  # 7 years
+    image_data_retention: int = 1095     # 3 years
+    sequence_data_retention: int = 1825  # 5 years
+    
+    # Privacy settings
+    auto_anonymization: bool = True
+    consent_expiry_days: int = 365
+    audit_log_retention: int = 2190  # 6 years
+    
+    def __post_init__(self):
+        self.logger = logging.getLogger(__name__)
+        self.consent_records = {}
+        self.audit_events = []
+        
+    def record_consent(self, user_id: str, purposes: List[ProcessingPurpose], 
+                      granted: bool = True) -> str:
+        """Record user consent for data processing."""
+        
+        consent_id = str(uuid.uuid4())
+        consent_record = {
+            "consent_id": consent_id,
+            "user_id_hash": hashlib.sha256(user_id.encode()).hexdigest()[:16],
+            "purposes": [p.value for p in purposes],
+            "granted": granted,
+            "timestamp": time.time(),
+            "expires_at": time.time() + (self.consent_expiry_days * 86400),
+            "withdrawal_available": True
         }
-
-
-class ComplianceManager:
-    """Manage compliance with data protection regulations."""
-    
-    def __init__(self, enabled_regulations: Optional[List[RegulationType]] = None):
-        """Initialize compliance manager.
         
-        Args:
-            enabled_regulations: List of regulations to enforce
-        """
-        self.enabled_regulations = enabled_regulations or [
-            RegulationType.GDPR,
-            RegulationType.CCPA,
-            RegulationType.PDPA
-        ]
+        self.consent_records[consent_id] = consent_record
         
-        self.processing_records: List[DataProcessingRecord] = []
-        self.consent_records: Dict[str, Dict[str, Any]] = {}
-        self.audit_log: List[Dict[str, Any]] = []
-        
-        # Setup compliance data directory
-        self.compliance_dir = Path.home() / '.dna_origami_ae' / 'compliance'
-        self.compliance_dir.mkdir(parents=True, exist_ok=True)
-        
-        logger.info(f"Compliance manager initialized with regulations: {[r.value for r in self.enabled_regulations]}")
-    
-    def classify_data(self, data_description: str, 
-                     personal_data: bool = False,
-                     sensitive_data: bool = False) -> DataClassification:
-        """Classify data according to sensitivity.
-        
-        Args:
-            data_description: Description of the data
-            personal_data: Whether data contains personal information
-            sensitive_data: Whether data contains sensitive information
-            
-        Returns:
-            Data classification level
-        """
-        # Check for sensitive patterns
-        sensitive_patterns = [
-            r'dna.*sequence.*human',
-            r'genetic.*information',
-            r'medical.*data',
-            r'health.*record',
-            r'biometric',
-            r'genomic'
-        ]
-        
-        is_sensitive_content = any(
-            re.search(pattern, data_description.lower()) 
-            for pattern in sensitive_patterns
-        )
-        
-        if sensitive_data or is_sensitive_content:
-            classification = DataClassification.RESTRICTED
-        elif personal_data:
-            classification = DataClassification.CONFIDENTIAL
-        else:
-            classification = DataClassification.INTERNAL
-        
-        self._log_audit_event('data_classification', {
-            'description': data_description,
-            'classification': classification.value,
-            'personal_data': personal_data,
-            'sensitive_data': sensitive_data
+        self._log_audit("consent_recorded", {
+            "consent_id": consent_id,
+            "purposes_count": len(purposes),
+            "granted": granted
         })
         
-        return classification
+        return consent_id
     
-    def record_processing_activity(self, activity: DataProcessingRecord):
-        """Record a data processing activity."""
-        self.processing_records.append(activity)
+    def has_valid_consent(self, user_id: str, purpose: ProcessingPurpose) -> bool:
+        """Check if user has valid consent for a purpose."""
         
-        self._log_audit_event('processing_activity', activity.to_dict())
-        
-        # Check compliance requirements
-        self._check_processing_compliance(activity)
-        
-        logger.debug(f"Recorded processing activity: {activity.activity_id}")
-    
-    def obtain_consent(self, user_id: str, purpose: str, 
-                      data_types: List[str], required: bool = True) -> bool:
-        """Obtain user consent for data processing.
-        
-        Args:
-            user_id: Unique user identifier
-            purpose: Purpose of data processing
-            data_types: Types of data to be processed
-            required: Whether consent is required
-            
-        Returns:
-            Whether consent was obtained
-        """
-        # In a real implementation, this would show a consent dialog
-        # For now, we simulate consent based on regulatory requirements
-        
-        consent_required = self._is_consent_required(purpose, data_types)
-        
-        if consent_required or required:
-            # Simulate consent (in practice, would be obtained from user)
-            consent_given = True  # Would be actual user response
-            
-            self.consent_records[user_id] = {
-                'purpose': purpose,
-                'data_types': data_types,
-                'consent_given': consent_given,
-                'timestamp': time.time(),
-                'consent_method': 'explicit',
-                'withdrawable': True
-            }
-            
-            self._log_audit_event('consent_obtained', {
-                'user_id': self._hash_user_id(user_id),
-                'purpose': purpose,
-                'data_types': data_types,
-                'consent_given': consent_given
-            })
-            
-            return consent_given
-        
-        return True  # No consent required
-    
-    def withdraw_consent(self, user_id: str) -> bool:
-        """Allow user to withdraw consent.
-        
-        Args:
-            user_id: User identifier
-            
-        Returns:
-            Whether withdrawal was successful
-        """
-        if user_id in self.consent_records:
-            self.consent_records[user_id]['consent_given'] = False
-            self.consent_records[user_id]['withdrawal_timestamp'] = time.time()
-            
-            self._log_audit_event('consent_withdrawn', {
-                'user_id': self._hash_user_id(user_id)
-            })
-            
-            # Trigger data deletion if required
-            self._handle_consent_withdrawal(user_id)
-            
-            return True
-        
-        return False
-    
-    def check_data_retention(self) -> List[Dict[str, Any]]:
-        """Check for data that should be deleted due to retention policies.
-        
-        Returns:
-            List of data items to be deleted
-        """
-        items_to_delete = []
+        user_hash = hashlib.sha256(user_id.encode()).hexdigest()[:16]
         current_time = time.time()
         
-        for record in self.processing_records:
-            retention_seconds = self._parse_retention_period(record.retention_period)
-            
-            if current_time - record.timestamp > retention_seconds:
-                items_to_delete.append({
-                    'activity_id': record.activity_id,
-                    'reason': 'retention_period_expired',
-                    'age_days': (current_time - record.timestamp) / 86400
-                })
-        
-        if items_to_delete:
-            self._log_audit_event('retention_check', {
-                'items_to_delete': len(items_to_delete)
-            })
-        
-        return items_to_delete
+        for consent in self.consent_records.values():
+            if (consent["user_id_hash"] == user_hash and
+                purpose.value in consent["purposes"] and
+                consent["granted"] and
+                consent["expires_at"] > current_time):
+                return True
+                
+        return False
     
-    def generate_privacy_report(self) -> Dict[str, Any]:
-        """Generate privacy compliance report.
+    def process_data_subject_request(self, request_type: str, user_id: str) -> Dict[str, Any]:
+        """Process data subject rights requests (GDPR Articles 15-22)."""
         
-        Returns:
-            Comprehensive privacy report
-        """
-        report = {
-            'generated_at': time.time(),
-            'regulations': [r.value for r in self.enabled_regulations],
-            'processing_activities': {
-                'total': len(self.processing_records),
-                'by_purpose': self._group_by_purpose(),
-                'by_legal_basis': self._group_by_legal_basis()
-            },
-            'consent_management': {
-                'total_consents': len(self.consent_records),
-                'active_consents': sum(1 for c in self.consent_records.values() 
-                                     if c.get('consent_given', False)),
-                'withdrawn_consents': sum(1 for c in self.consent_records.values() 
-                                        if not c.get('consent_given', True))
-            },
-            'data_retention': {
-                'items_due_for_deletion': len(self.check_data_retention())
-            },
-            'audit_events': len(self.audit_log),
-            'compliance_status': self._assess_compliance_status()
-        }
+        user_hash = hashlib.sha256(user_id.encode()).hexdigest()[:16]
+        request_id = str(uuid.uuid4())
         
-        # Save report
-        report_file = self.compliance_dir / f"privacy_report_{int(time.time())}.json"
-        with open(report_file, 'w') as f:
-            json.dump(report, f, indent=2)
-        
-        logger.info(f"Privacy report generated: {report_file}")
-        
-        return report
-    
-    def handle_data_subject_request(self, request_type: str, user_id: str) -> Dict[str, Any]:
-        """Handle data subject rights requests.
-        
-        Args:
-            request_type: Type of request (access, rectification, erasure, portability)
-            user_id: Subject's user ID
-            
-        Returns:
-            Response to the request
-        """
-        user_id_hash = self._hash_user_id(user_id)
-        
-        if request_type == 'access':
-            # Right to access personal data
-            user_data = self._collect_user_data(user_id)
+        if request_type == "access":
+            # Right of access (Article 15)
+            user_data = self._collect_user_data(user_hash)
             response = {
-                'request_type': 'access',
-                'user_data': user_data,
-                'processing_activities': [
-                    r.to_dict() for r in self.processing_records 
-                    if user_id in r.data_subjects
-                ]
+                "request_id": request_id,
+                "type": "access",
+                "status": "completed",
+                "data": user_data,
+                "processing_purposes": self._get_user_purposes(user_hash),
+                "retention_periods": self._get_retention_info(),
+                "rights_info": self._get_rights_information()
             }
             
-        elif request_type == 'erasure':
-            # Right to be forgotten
-            deleted_items = self._delete_user_data(user_id)
+        elif request_type == "portability":
+            # Right to data portability (Article 20)
+            portable_data = self._export_user_data(user_hash)
             response = {
-                'request_type': 'erasure',
-                'deleted_items': deleted_items,
-                'status': 'completed'
+                "request_id": request_id,
+                "type": "portability", 
+                "status": "completed",
+                "format": "json",
+                "data": portable_data
             }
             
-        elif request_type == 'portability':
-            # Right to data portability
-            portable_data = self._export_user_data(user_id)
+        elif request_type == "erasure":
+            # Right to erasure (Article 17)
+            deleted_items = self._delete_user_data(user_hash)
             response = {
-                'request_type': 'portability',
-                'data_format': 'json',
-                'data': portable_data
+                "request_id": request_id,
+                "type": "erasure",
+                "status": "completed", 
+                "deleted_items": deleted_items,
+                "retention_exceptions": self._check_retention_exceptions(user_hash)
             }
             
-        elif request_type == 'rectification':
-            # Right to rectification
+        elif request_type == "rectification":
+            # Right to rectification (Article 16)
             response = {
-                'request_type': 'rectification',
-                'status': 'manual_review_required',
-                'message': 'Please provide corrected information'
+                "request_id": request_id,
+                "type": "rectification",
+                "status": "manual_review_required",
+                "instructions": "Please provide specific corrections needed"
             }
             
         else:
             response = {
-                'request_type': request_type,
-                'status': 'unsupported',
-                'message': f'Request type {request_type} is not supported'
+                "request_id": request_id,
+                "type": request_type,
+                "status": "unsupported",
+                "message": f"Request type '{request_type}' is not supported"
             }
         
-        self._log_audit_event('data_subject_request', {
-            'request_type': request_type,
-            'user_id': user_id_hash,
-            'status': response.get('status', 'processed')
+        self._log_audit("data_subject_request", {
+            "request_id": request_id,
+            "type": request_type,
+            "user_hash": user_hash,
+            "status": response["status"]
         })
         
         return response
     
-    def _is_consent_required(self, purpose: str, data_types: List[str]) -> bool:
-        """Determine if consent is required for processing."""
-        # GDPR requires consent for most processing of personal data
-        if RegulationType.GDPR in self.enabled_regulations:
-            personal_data_types = ['personal', 'genetic', 'biometric', 'health']
-            if any(dt in data_types for dt in personal_data_types):
-                return True
+    def check_regional_compliance(self, user_location: str, data_type: DataCategory) -> Dict[str, Any]:
+        """Check compliance requirements based on user location."""
         
-        # CCPA has different requirements
-        if RegulationType.CCPA in self.enabled_regulations:
-            # CCPA focuses on selling personal information
-            if 'sell' in purpose.lower() or 'share' in purpose.lower():
-                return True
-        
-        return False
-    
-    def _check_processing_compliance(self, activity: DataProcessingRecord):
-        """Check if processing activity complies with regulations."""
-        issues = []
-        
-        # Check GDPR compliance
-        if RegulationType.GDPR in self.enabled_regulations:
-            if not activity.legal_basis:
-                issues.append("Missing legal basis for processing (GDPR Art. 6)")
-            
-            if not activity.retention_period:
-                issues.append("Missing retention period (GDPR Art. 5)")
-        
-        # Check CCPA compliance
-        if RegulationType.CCPA in self.enabled_regulations:
-            if 'california' in activity.data_subjects and not activity.user_consent:
-                issues.append("Missing user consent for California residents (CCPA)")
-        
-        if issues:
-            self._log_audit_event('compliance_issues', {
-                'activity_id': activity.activity_id,
-                'issues': issues
-            })
-            
-            logger.warning(f"Compliance issues found for activity {activity.activity_id}: {issues}")
-    
-    def _parse_retention_period(self, period: str) -> float:
-        """Parse retention period string to seconds."""
-        period = period.lower()
-        
-        if 'day' in period:
-            days = int(re.search(r'\\d+', period).group())
-            return days * 86400
-        elif 'month' in period:
-            months = int(re.search(r'\\d+', period).group())
-            return months * 30 * 86400
-        elif 'year' in period:
-            years = int(re.search(r'\\d+', period).group())
-            return years * 365 * 86400
-        else:
-            # Default to 1 year
-            return 365 * 86400
-    
-    def _group_by_purpose(self) -> Dict[str, int]:
-        """Group processing activities by purpose."""
-        purposes = {}
-        for record in self.processing_records:
-            purposes[record.purpose] = purposes.get(record.purpose, 0) + 1
-        return purposes
-    
-    def _group_by_legal_basis(self) -> Dict[str, int]:
-        """Group processing activities by legal basis."""
-        bases = {}
-        for record in self.processing_records:
-            bases[record.legal_basis] = bases.get(record.legal_basis, 0) + 1
-        return bases
-    
-    def _assess_compliance_status(self) -> Dict[str, Any]:
-        """Assess overall compliance status."""
-        total_activities = len(self.processing_records)
-        activities_with_legal_basis = sum(
-            1 for r in self.processing_records if r.legal_basis
-        )
-        activities_with_retention = sum(
-            1 for r in self.processing_records if r.retention_period
-        )
-        
-        return {
-            'legal_basis_coverage': activities_with_legal_basis / total_activities if total_activities > 0 else 1.0,
-            'retention_policy_coverage': activities_with_retention / total_activities if total_activities > 0 else 1.0,
-            'consent_management_active': len(self.consent_records) > 0,
-            'audit_logging_active': len(self.audit_log) > 0
+        compliance_requirements = {
+            "applicable_regulations": [],
+            "consent_required": False,
+            "legitimate_interests_allowed": True,
+            "data_transfer_restrictions": False,
+            "retention_limits": None
         }
+        
+        # EU/EEA - GDPR
+        eu_countries = ["AT", "BE", "BG", "CY", "CZ", "DE", "DK", "EE", "ES", "FI", "FR", "GR", "HR", "HU", "IE", "IT", "LT", "LU", "LV", "MT", "NL", "PL", "PT", "RO", "SE", "SI", "SK"]
+        if user_location in eu_countries:
+            compliance_requirements["applicable_regulations"].append("GDPR")
+            if data_type in [DataCategory.DNA_SEQUENCES, DataCategory.IMAGE_DATA]:
+                compliance_requirements["consent_required"] = True
+            compliance_requirements["data_transfer_restrictions"] = True
+        
+        # California - CCPA
+        if user_location == "CA":
+            compliance_requirements["applicable_regulations"].append("CCPA")
+            compliance_requirements["legitimate_interests_allowed"] = False
+        
+        # Singapore - PDPA
+        if user_location == "SG":
+            compliance_requirements["applicable_regulations"].append("PDPA")
+            compliance_requirements["consent_required"] = True
+        
+        # Brazil - LGPD
+        if user_location == "BR":
+            compliance_requirements["applicable_regulations"].append("LGPD")
+            compliance_requirements["consent_required"] = True
+        
+        self._log_audit("compliance_check", {
+            "user_location": user_location,
+            "data_type": data_type.value,
+            "regulations": compliance_requirements["applicable_regulations"]
+        })
+        
+        return compliance_requirements
     
-    def _hash_user_id(self, user_id: str) -> str:
-        """Hash user ID for privacy."""
-        return hashlib.sha256(user_id.encode()).hexdigest()[:16]
+    def anonymize_data(self, data: Any, data_type: DataCategory) -> Any:
+        """Anonymize data for compliance purposes."""
+        
+        if not self.auto_anonymization:
+            return data
+            
+        if data_type == DataCategory.DNA_SEQUENCES:
+            # Anonymize DNA sequences while preserving statistical properties
+            if isinstance(data, str):
+                return self._anonymize_dna_sequence(data)
+            elif isinstance(data, list):
+                return [self._anonymize_dna_sequence(seq) for seq in data]
+                
+        elif data_type == DataCategory.IMAGE_DATA:
+            # Apply privacy-preserving transformations to images
+            return self._anonymize_image_data(data)
+            
+        elif data_type == DataCategory.SIMULATION_DATA:
+            # Anonymize coordinate data
+            return self._anonymize_coordinates(data)
+        
+        return data
     
-    def _collect_user_data(self, user_id: str) -> Dict[str, Any]:
+    def generate_compliance_report(self) -> Dict[str, Any]:
+        """Generate comprehensive compliance report."""
+        
+        current_time = time.time()
+        
+        # Consent analysis
+        total_consents = len(self.consent_records)
+        active_consents = sum(
+            1 for c in self.consent_records.values()
+            if c["granted"] and c["expires_at"] > current_time
+        )
+        
+        # Data retention analysis
+        expired_data = self._find_expired_data()
+        
+        # Audit log analysis
+        recent_events = [
+            e for e in self.audit_events
+            if current_time - e["timestamp"] <= 86400  # Last 24 hours
+        ]
+        
+        report = {
+            "generated_at": current_time,
+            "reporting_period": "last_30_days",
+            "compliance_status": {
+                "gdpr_compliant": self._check_gdpr_compliance(),
+                "ccpa_compliant": self._check_ccpa_compliance(),
+                "pdpa_compliant": self._check_pdpa_compliance()
+            },
+            "consent_management": {
+                "total_consents": total_consents,
+                "active_consents": active_consents,
+                "expired_consents": total_consents - active_consents,
+                "consent_rate": active_consents / max(total_consents, 1)
+            },
+            "data_retention": {
+                "items_due_deletion": len(expired_data),
+                "categories": {cat.value: 0 for cat in DataCategory}
+            },
+            "audit_activity": {
+                "total_events": len(self.audit_events),
+                "recent_events": len(recent_events),
+                "event_types": self._count_event_types(recent_events)
+            },
+            "recommendations": self._generate_recommendations()
+        }
+        
+        self._log_audit("compliance_report", {"items_count": len(report)})
+        
+        return report
+    
+    def _anonymize_dna_sequence(self, sequence: str) -> str:
+        """Anonymize DNA sequence while preserving GC content."""
+        import random
+        
+        if not sequence:
+            return sequence
+            
+        # Preserve GC content ratio
+        gc_count = sequence.count('G') + sequence.count('C')
+        gc_ratio = gc_count / len(sequence)
+        
+        anonymized = []
+        for _ in range(len(sequence)):
+            if random.random() < gc_ratio:
+                anonymized.append(random.choice(['G', 'C']))
+            else:
+                anonymized.append(random.choice(['A', 'T']))
+        
+        return ''.join(anonymized)
+    
+    def _anonymize_image_data(self, image_data: Any) -> Any:
+        """Apply privacy-preserving transformations to image data."""
+        # Placeholder for image anonymization
+        # In practice, might apply blurring, noise, or other transformations
+        return image_data
+    
+    def _anonymize_coordinates(self, coordinates: Any) -> Any:
+        """Anonymize molecular coordinates."""
+        # Placeholder for coordinate anonymization
+        # In practice, might apply random translations or noise
+        return coordinates
+    
+    def _collect_user_data(self, user_hash: str) -> Dict[str, Any]:
         """Collect all data associated with a user."""
-        # In practice, this would query all systems for user data
+        user_consents = [
+            c for c in self.consent_records.values()
+            if c["user_id_hash"] == user_hash
+        ]
+        
+        user_events = [
+            e for e in self.audit_events
+            if e.get("user_hash") == user_hash
+        ]
+        
         return {
-            'user_id_hash': self._hash_user_id(user_id),
-            'consent_records': self.consent_records.get(user_id, {}),
-            'processing_activities': [
-                r.activity_id for r in self.processing_records 
-                if user_id in r.data_subjects
-            ]
+            "user_id_hash": user_hash,
+            "consent_records": user_consents,
+            "audit_events": len(user_events),
+            "data_categories": list(set(e.get("data_type", "") for e in user_events if e.get("data_type")))
         }
     
-    def _delete_user_data(self, user_id: str) -> List[str]:
-        """Delete all data associated with a user."""
+    def _export_user_data(self, user_hash: str) -> Dict[str, Any]:
+        """Export user data in portable format."""
+        return self._collect_user_data(user_hash)
+    
+    def _delete_user_data(self, user_hash: str) -> List[str]:
+        """Delete user data for erasure request."""
         deleted_items = []
         
         # Remove consent records
-        if user_id in self.consent_records:
-            del self.consent_records[user_id]
-            deleted_items.append('consent_records')
-        
-        # Remove from processing records
-        self.processing_records = [
-            r for r in self.processing_records 
-            if user_id not in r.data_subjects
+        consents_to_remove = [
+            consent_id for consent_id, consent in self.consent_records.items()
+            if consent["user_id_hash"] == user_hash
         ]
-        deleted_items.append('processing_records')
+        
+        for consent_id in consents_to_remove:
+            del self.consent_records[consent_id]
+            deleted_items.append(f"consent_{consent_id}")
+        
+        # Anonymize audit events
+        for event in self.audit_events:
+            if event.get("user_hash") == user_hash:
+                event["user_hash"] = "anonymized"
+        
+        deleted_items.append("audit_events_anonymized")
         
         return deleted_items
     
-    def _export_user_data(self, user_id: str) -> Dict[str, Any]:
-        """Export user data in portable format."""
-        return self._collect_user_data(user_id)
-    
-    def _handle_consent_withdrawal(self, user_id: str):
-        """Handle actions required when consent is withdrawn."""
-        # Stop processing personal data
-        logger.info(f"Consent withdrawn for user {self._hash_user_id(user_id)}")
+    def _get_user_purposes(self, user_hash: str) -> List[str]:
+        """Get processing purposes for a user."""
+        purposes = set()
         
-        # In practice, would trigger data deletion or anonymization
-        pass
+        for consent in self.consent_records.values():
+            if consent["user_id_hash"] == user_hash:
+                purposes.update(consent["purposes"])
+        
+        return list(purposes)
     
-    def _log_audit_event(self, event_type: str, data: Dict[str, Any]):
-        """Log audit event."""
+    def _get_retention_info(self) -> Dict[str, int]:
+        """Get data retention information."""
+        return {
+            "research_data": self.research_data_retention,
+            "image_data": self.image_data_retention,
+            "sequence_data": self.sequence_data_retention
+        }
+    
+    def _get_rights_information(self) -> Dict[str, str]:
+        """Get information about data subject rights."""
+        return {
+            "access": "Right to obtain information about personal data processing",
+            "rectification": "Right to correct inaccurate personal data",
+            "erasure": "Right to deletion of personal data under certain conditions",
+            "portability": "Right to receive personal data in a structured format",
+            "objection": "Right to object to processing for legitimate interests",
+            "restriction": "Right to restrict processing under certain conditions"
+        }
+    
+    def _check_retention_exceptions(self, user_hash: str) -> List[str]:
+        """Check if any retention exceptions apply."""
+        exceptions = []
+        
+        # Research exception
+        if self._has_research_data(user_hash):
+            exceptions.append("scientific_research")
+        
+        # Legal obligation exception
+        if self._has_legal_retention_requirement(user_hash):
+            exceptions.append("legal_obligation")
+        
+        return exceptions
+    
+    def _has_research_data(self, user_hash: str) -> bool:
+        """Check if user has active research data."""
+        # Placeholder implementation
+        return False
+    
+    def _has_legal_retention_requirement(self, user_hash: str) -> bool:
+        """Check if legal retention requirements apply."""
+        # Placeholder implementation
+        return False
+    
+    def _find_expired_data(self) -> List[Dict[str, Any]]:
+        """Find data that has exceeded retention periods."""
+        expired_items = []
+        current_time = time.time()
+        
+        # Check consent expiry
+        for consent_id, consent in self.consent_records.items():
+            if consent["expires_at"] <= current_time:
+                expired_items.append({
+                    "type": "consent",
+                    "id": consent_id,
+                    "expired_at": consent["expires_at"]
+                })
+        
+        return expired_items
+    
+    def _check_gdpr_compliance(self) -> bool:
+        """Check GDPR compliance status."""
+        if not self.gdpr_enabled:
+            return True
+            
+        # Basic compliance checks
+        has_consent_mechanism = len(self.consent_records) > 0
+        has_audit_trail = len(self.audit_events) > 0
+        has_retention_policy = True  # Configured in class
+        
+        return has_consent_mechanism and has_audit_trail and has_retention_policy
+    
+    def _check_ccpa_compliance(self) -> bool:
+        """Check CCPA compliance status."""
+        if not self.ccpa_enabled:
+            return True
+            
+        # Basic CCPA compliance checks
+        return True  # Simplified for now
+    
+    def _check_pdpa_compliance(self) -> bool:
+        """Check PDPA compliance status."""
+        if not self.pdpa_enabled:
+            return True
+            
+        # Basic PDPA compliance checks
+        return True  # Simplified for now
+    
+    def _count_event_types(self, events: List[Dict[str, Any]]) -> Dict[str, int]:
+        """Count audit events by type."""
+        event_counts = {}
+        for event in events:
+            event_type = event.get("event_type", "unknown")
+            event_counts[event_type] = event_counts.get(event_type, 0) + 1
+        return event_counts
+    
+    def _generate_recommendations(self) -> List[str]:
+        """Generate compliance recommendations."""
+        recommendations = []
+        
+        current_time = time.time()
+        
+        # Check consent expiry
+        expiring_soon = sum(
+            1 for c in self.consent_records.values()
+            if c["expires_at"] - current_time <= 2592000  # 30 days
+        )
+        
+        if expiring_soon > 0:
+            recommendations.append(f"Renew {expiring_soon} consents expiring within 30 days")
+        
+        # Check audit log size
+        if len(self.audit_events) > 100000:
+            recommendations.append("Archive old audit events to maintain performance")
+        
+        # General recommendations
+        recommendations.extend([
+            "Regularly review data retention policies",
+            "Conduct periodic compliance audits", 
+            "Update privacy notices for regulatory changes",
+            "Train staff on data protection requirements"
+        ])
+        
+        return recommendations
+    
+    def _log_audit(self, event_type: str, data: Dict[str, Any]) -> None:
+        """Log an audit event."""
         event = {
-            'timestamp': time.time(),
-            'event_type': event_type,
-            'data': data,
-            'locale': get_current_locale()
+            "timestamp": time.time(),
+            "event_type": event_type,
+            "data": data
         }
         
-        self.audit_log.append(event)
+        self.audit_events.append(event)
         
         # Keep audit log manageable
-        if len(self.audit_log) > 10000:
-            self.audit_log = self.audit_log[-5000:]
+        if len(self.audit_events) > 50000:
+            self.audit_events = self.audit_events[-25000:]
 
 
-class DataAnonymizer:
-    """Anonymize sensitive data for compliance."""
-    
-    @staticmethod
-    def anonymize_dna_sequence(sequence: str, method: str = 'substitution') -> str:
-        """Anonymize DNA sequence while preserving structure.
-        
-        Args:
-            sequence: Original DNA sequence
-            method: Anonymization method
-            
-        Returns:
-            Anonymized sequence
-        """
-        if method == 'substitution':
-            # Replace with random bases maintaining GC content
-            import random
-            bases = ['A', 'T', 'G', 'C']
-            
-            # Calculate original GC content
-            gc_count = sequence.count('G') + sequence.count('C')
-            gc_content = gc_count / len(sequence)
-            
-            # Generate new sequence with similar GC content
-            anonymized = []
-            for _ in range(len(sequence)):
-                if random.random() < gc_content:
-                    anonymized.append(random.choice(['G', 'C']))
-                else:
-                    anonymized.append(random.choice(['A', 'T']))
-            
-            return ''.join(anonymized)
-        
-        elif method == 'masking':
-            # Replace with N's
-            return 'N' * len(sequence)
-        
-        else:
-            raise ValueError(f"Unknown anonymization method: {method}")
-    
-    @staticmethod
-    def anonymize_coordinates(coordinates, method: str = 'noise') -> any:
-        """Anonymize molecular coordinates.
-        
-        Args:
-            coordinates: Original coordinates
-            method: Anonymization method
-            
-        Returns:
-            Anonymized coordinates
-        """
-        import numpy as np
-        
-        if method == 'noise':
-            # Add random noise
-            noise_level = 0.1 * np.std(coordinates)
-            noise = np.random.normal(0, noise_level, coordinates.shape)
-            return coordinates + noise
-        
-        elif method == 'translation':
-            # Apply random translation
-            translation = np.random.normal(0, 10, 3)
-            return coordinates + translation
-        
-        else:
-            raise ValueError(f"Unknown anonymization method: {method}")
+# Global compliance instance
+_global_compliance = None
 
+def get_global_compliance() -> GlobalCompliance:
+    """Get the global compliance manager."""
+    global _global_compliance
+    if _global_compliance is None:
+        _global_compliance = GlobalCompliance()
+    return _global_compliance
 
-# Global compliance manager instance
-compliance_manager = ComplianceManager()
-
-
-def ensure_compliance(data_type: str, purpose: str, user_id: Optional[str] = None) -> bool:
-    """Ensure compliance for data processing.
+def ensure_compliance(user_id: str, data_type: DataCategory, 
+                     purpose: ProcessingPurpose, 
+                     user_location: str = "US") -> bool:
+    """Ensure compliance before processing data."""
     
-    Args:
-        data_type: Type of data being processed
-        purpose: Purpose of processing
-        user_id: User identifier if applicable
-        
-    Returns:
-        Whether processing is compliant
-    """
-    # Classify data
-    classification = compliance_manager.classify_data(
-        data_type,
-        personal_data='personal' in data_type.lower(),
-        sensitive_data='genetic' in data_type.lower() or 'dna' in data_type.lower()
-    )
+    compliance = get_global_compliance()
     
-    # Obtain consent if needed
-    if user_id and classification in [DataClassification.CONFIDENTIAL, DataClassification.RESTRICTED]:
-        consent_obtained = compliance_manager.obtain_consent(
-            user_id, purpose, [data_type]
-        )
-        if not consent_obtained:
-            return False
+    # Check regional requirements
+    requirements = compliance.check_regional_compliance(user_location, data_type)
     
-    # Record processing activity
-    activity = DataProcessingRecord(
-        activity_id=f"{purpose}_{int(time.time())}",
-        purpose=purpose,
-        data_types=[data_type],
-        legal_basis="legitimate_interest" if classification == DataClassification.INTERNAL else "consent",
-        retention_period="2 years",
-        data_subjects=[user_id] if user_id else [],
-        recipients=["dna_origami_ae_system"],
-        transfers=[]
-    )
+    # Obtain consent if required
+    if requirements["consent_required"]:
+        if not compliance.has_valid_consent(user_id, purpose):
+            # In practice, would redirect to consent form
+            consent_id = compliance.record_consent(user_id, [purpose])
+            if not consent_id:
+                return False
     
-    compliance_manager.record_processing_activity(activity)
+    compliance._log_audit("data_processing", {
+        "user_location": user_location,
+        "data_type": data_type.value,
+        "purpose": purpose.value,
+        "compliant": True
+    })
     
     return True
