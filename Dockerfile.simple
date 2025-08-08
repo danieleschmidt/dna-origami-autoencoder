@@ -1,0 +1,45 @@
+# DNA Origami AutoEncoder - Simple Production Docker Image
+FROM ubuntu:24.04
+
+LABEL maintainer="Terragon Labs"
+LABEL description="DNA Origami AutoEncoder - Convert images to DNA sequences"
+LABEL version="1.0.0"
+
+# Set environment variables
+ENV PYTHONPATH=/app
+ENV PYTHONUNBUFFERED=1
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    python3 \
+    python3-numpy \
+    python3-pil \
+    python3-fastapi \
+    python3-uvicorn \
+    python3-yaml \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create application directory
+WORKDIR /app
+
+# Copy application code
+COPY . /app/
+
+# Create non-root user for security
+RUN useradd -m -u 1001 dnauser && \
+    chown -R dnauser:dnauser /app
+
+# Switch to non-root user
+USER dnauser
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:8000/health || exit 1
+
+# Expose port
+EXPOSE 8000
+
+# Default command
+CMD ["python3", "api_server.py"]

@@ -1,7 +1,7 @@
 """Error correction for DNA sequences."""
 
 import numpy as np
-from typing import Optional, List, Tuple
+from typing import Optional, List, Tuple, Dict, Any
 from dataclasses import dataclass
 from abc import ABC, abstractmethod
 
