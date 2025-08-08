@@ -40,7 +40,7 @@ class Base4Encoder:
         
         dna_sequence = ""
         for i in range(0, len(binary_data), 2):
-            bit_pair = ''.join(str(binary_data[i:i+2]))
+            bit_pair = ''.join(str(b) for b in binary_data[i:i+2])
             if bit_pair in self._reverse_mapping:
                 dna_sequence += self._reverse_mapping[bit_pair]
             else:
