@@ -1,17 +1,13 @@
 """DNA origami design module for creating scaffold and staple structures."""
 
-from .origami_designer import OrigamiDesigner
-from .shape_designer import ShapeDesigner
-from .origami_3d import Origami3D
-from .routing_algorithm import RoutingAlgorithm, HoneycombRouter, SquareLatticeRouter
+from .origami_designer import OrigamiDesigner, DesignParameters
+from .routing_algorithm import RoutingAlgorithm, HoneycombRouter
 from .shape_library import ShapeLibrary
 
 __all__ = [
     "OrigamiDesigner",
-    "ShapeDesigner", 
-    "Origami3D",
+    "DesignParameters",
     "RoutingAlgorithm",
-    "HoneycombRouter",
-    "SquareLatticeRouter",
+    "HoneycombRouter", 
     "ShapeLibrary",
 ]
