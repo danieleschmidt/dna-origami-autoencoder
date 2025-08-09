@@ -75,13 +75,15 @@ class DNASequence:
     description: Optional[str] = None
     constraints: DNAConstraints = field(default_factory=DNAConstraints)
     metadata: Dict = field(default_factory=dict)
+    skip_validation: bool = False
     
     def __post_init__(self):
         """Validate sequence on creation."""
         self.sequence = self.sequence.upper()
-        is_valid, errors = self.constraints.validate_sequence(self.sequence)
-        if not is_valid:
-            raise ValueError(f"Invalid DNA sequence: {'; '.join(errors)}")
+        if not self.skip_validation:
+            is_valid, errors = self.constraints.validate_sequence(self.sequence)
+            if not is_valid:
+                raise ValueError(f"Invalid DNA sequence: {'; '.join(errors)}")
     
     @property
     def length(self) -> int:

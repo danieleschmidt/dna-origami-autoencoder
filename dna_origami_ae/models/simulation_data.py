@@ -20,17 +20,24 @@ class StructureCoordinates:
     """3D coordinates for molecular structure."""
     
     positions: np.ndarray  # Shape: (n_atoms, 3)
-    atom_types: List[str]
+    atom_types: Optional[List[str]] = None
     connectivity: Optional[np.ndarray] = None  # Bonds between atoms
     box_vectors: Optional[np.ndarray] = None  # Simulation box dimensions
+    structure_type: str = "dna_origami"
+    coordinate_system: str = "cartesian" 
+    units: str = "nanometers"
     
     def __post_init__(self):
         """Validate coordinate data."""
         if self.positions.shape[1] != 3:
             raise ValueError("Positions must have shape (n_atoms, 3)")
         
-        if len(self.atom_types) != self.positions.shape[0]:
+        if self.atom_types is not None and len(self.atom_types) != self.positions.shape[0]:
             raise ValueError("Number of atom types must match number of positions")
+        
+        # Create default atom types if not provided
+        if self.atom_types is None:
+            self.atom_types = ['C'] * self.positions.shape[0]
         
         if self.connectivity is not None:
             if self.connectivity.shape[1] != 2:
