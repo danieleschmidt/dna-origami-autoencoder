@@ -146,7 +146,8 @@ class OrigamiSimulator:
         
         # Staple atoms
         for staple in origami.staples:
-            for base in staple.sequence.sequence:
+            staple_sequence = staple.sequence.sequence if hasattr(staple.sequence, 'sequence') else staple.sequence
+            for base in staple_sequence:
                 atom_types.extend(self._get_atoms_for_base(base))
         
         # Ensure positions and atom_types have same length

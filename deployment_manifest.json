@@ -1,0 +1,36 @@
+{
+  "application": "dna-origami-autoencoder",
+  "version": "1.0.0",
+  "regions": {
+    "us-east-1": {
+      "instances": 2,
+      "load_balancer": "lb-dna-ae-us-east-1",
+      "database": "db-dna-ae-us-east-1",
+      "cache": "cache-dna-ae-us-east-1",
+      "monitoring": "monitoring-dna-ae-us-east-1",
+      "status": "deployed",
+      "deployment_time": "2025-08-10T22:29:44.318898",
+      "health_check_url": "https://dna-ae-us-east-1.terragon.ai/health"
+    },
+    "eu-west-1": {
+      "instances": 2,
+      "load_balancer": "lb-dna-ae-eu-west-1",
+      "database": "db-dna-ae-eu-west-1",
+      "cache": "cache-dna-ae-eu-west-1",
+      "monitoring": "monitoring-dna-ae-eu-west-1",
+      "status": "deployed",
+      "deployment_time": "2025-08-10T22:29:44.419233",
+      "health_check_url": "https://dna-ae-eu-west-1.terragon.ai/health"
+    },
+    "ap-southeast-1": {
+      "instances": 2,
+      "load_balancer": "lb-dna-ae-ap-southeast-1",
+      "database": "db-dna-ae-ap-southeast-1",
+      "cache": "cache-dna-ae-ap-southeast-1",
+      "monitoring": "monitoring-dna-ae-ap-southeast-1",
+      "status": "deployed",
+      "deployment_time": "2025-08-10T22:29:44.519641",
+      "health_check_url": "https://dna-ae-ap-southeast-1.terragon.ai/health"
+    }
+  }
+}

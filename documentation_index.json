@@ -1,0 +1,26 @@
+{
+  "api_documentation": {
+    "openapi_spec": "/api/docs",
+    "interactive_docs": "/api/redoc",
+    "postman_collection": "/api/postman.json"
+  },
+  "operational_guides": [
+    "deployment_guide.md",
+    "troubleshooting_guide.md",
+    "scaling_guide.md",
+    "security_guide.md",
+    "compliance_guide.md"
+  ],
+  "developer_resources": [
+    "api_reference.md",
+    "sdk_documentation.md",
+    "integration_examples.md",
+    "best_practices.md"
+  ],
+  "compliance_documentation": [
+    "privacy_policy.md",
+    "terms_of_service.md",
+    "data_processing_agreement.md",
+    "security_whitepaper.pdf"
+  ]
+}

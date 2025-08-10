@@ -148,20 +148,30 @@ class DNAOriGAELogger:
         console_handler.setFormatter(DNAOriGAEFormatter())
         self.logger.addHandler(console_handler)
         
-        # File handler for all logs
-        log_dir = Path('/var/log/dna-origami-ae')
-        log_dir.mkdir(parents=True, exist_ok=True)
-        
-        file_handler = logging.FileHandler(log_dir / 'application.log')
-        file_handler.setLevel(logging.DEBUG)
-        file_handler.setFormatter(DNAOriGAEFormatter())
-        self.logger.addHandler(file_handler)
-        
-        # Error file handler
-        error_handler = logging.FileHandler(log_dir / 'errors.log')
-        error_handler.setLevel(logging.ERROR)
-        error_handler.setFormatter(DNAOriGAEFormatter())
-        self.logger.addHandler(error_handler)
+        # File handler for all logs (optional - disable if no permissions)
+        try:
+            log_dir = Path('/var/log/dna-origami-ae')
+            log_dir.mkdir(parents=True, exist_ok=True)
+            
+            file_handler = logging.FileHandler(log_dir / 'application.log')
+            file_handler.setLevel(logging.DEBUG)
+            file_handler.setFormatter(DNAOriGAEFormatter())
+            self.logger.addHandler(file_handler)
+            
+            # Error file handler
+            error_handler = logging.FileHandler(log_dir / 'errors.log')
+            error_handler.setLevel(logging.ERROR)
+            error_handler.setFormatter(DNAOriGAEFormatter())
+            self.logger.addHandler(error_handler)
+        except (PermissionError, OSError):
+            # Log to local directory if /var/log is not writable
+            log_dir = Path('./logs')
+            log_dir.mkdir(exist_ok=True)
+            
+            file_handler = logging.FileHandler(log_dir / 'application.log')
+            file_handler.setLevel(logging.DEBUG)
+            file_handler.setFormatter(DNAOriGAEFormatter())
+            self.logger.addHandler(file_handler)
         
         # Performance logger
         self.performance = PerformanceLogger(self.logger)

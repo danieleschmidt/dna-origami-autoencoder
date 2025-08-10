@@ -1,0 +1,29 @@
+{
+  "gdpr": {
+    "data_protection": true,
+    "right_to_deletion": true,
+    "consent_management": true,
+    "data_portability": true,
+    "privacy_by_design": true,
+    "status": "compliant"
+  },
+  "ccpa": {
+    "consumer_rights": true,
+    "opt_out_mechanism": true,
+    "data_disclosure": true,
+    "non_discrimination": true,
+    "status": "compliant"
+  },
+  "pdpa": {
+    "consent_framework": true,
+    "data_breach_notification": true,
+    "cross_border_transfers": true,
+    "status": "compliant"
+  },
+  "iso27001": {
+    "information_security": true,
+    "risk_management": true,
+    "incident_response": true,
+    "status": "compliant"
+  }
+}
