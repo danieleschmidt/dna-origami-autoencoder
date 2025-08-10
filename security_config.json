@@ -1,0 +1,29 @@
+{
+  "encryption": {
+    "data_at_rest": true,
+    "data_in_transit": true,
+    "key_rotation": 90
+  },
+  "authentication": {
+    "mfa_required": true,
+    "session_timeout": 3600,
+    "password_policy": {
+      "min_length": 12,
+      "require_symbols": true,
+      "require_numbers": true,
+      "require_uppercase": true
+    }
+  },
+  "network_security": {
+    "firewall_enabled": true,
+    "ddos_protection": true,
+    "intrusion_detection": true,
+    "ssl_tls_version": "1.3"
+  },
+  "compliance": {
+    "gdpr_enabled": true,
+    "ccpa_enabled": true,
+    "data_retention_days": 365,
+    "audit_logging": true
+  }
+}

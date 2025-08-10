@@ -1,0 +1,38 @@
+{
+  "provider": "multi-cloud",
+  "regions": [
+    "us-east-1",
+    "eu-west-1",
+    "ap-southeast-1"
+  ],
+  "compute": {
+    "instance_type": "standard",
+    "cpu_cores": 4,
+    "memory_gb": 16,
+    "storage_gb": 100
+  },
+  "network": {
+    "vpc_cidr": "10.0.0.0/16",
+    "public_subnets": [
+      "10.0.1.0/24",
+      "10.0.2.0/24"
+    ],
+    "private_subnets": [
+      "10.0.3.0/24",
+      "10.0.4.0/24"
+    ],
+    "load_balancer": true,
+    "cdn_enabled": true
+  },
+  "database": {
+    "type": "distributed",
+    "replication": "multi-region",
+    "backup_retention": 30,
+    "encryption_at_rest": true
+  },
+  "cache": {
+    "type": "redis_cluster",
+    "nodes": 3,
+    "failover": "automatic"
+  }
+}

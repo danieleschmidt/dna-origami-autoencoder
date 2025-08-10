@@ -1,0 +1,28 @@
+{
+  "endpoints": {
+    "/health": "Basic service health",
+    "/health/detailed": "Detailed component health",
+    "/health/live": "Liveness probe",
+    "/health/ready": "Readiness probe"
+  },
+  "components": [
+    "database_connection",
+    "cache_connection",
+    "external_api_dependencies",
+    "disk_space",
+    "memory_usage",
+    "cpu_load"
+  ],
+  "intervals": {
+    "health_check": 30,
+    "deep_health_check": 300,
+    "dependency_check": 60
+  },
+  "thresholds": {
+    "response_time_ms": 1000,
+    "error_rate_percent": 1,
+    "cpu_percent": 80,
+    "memory_percent": 85,
+    "disk_percent": 90
+  }
+}

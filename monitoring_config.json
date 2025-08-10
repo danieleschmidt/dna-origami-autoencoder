@@ -1,0 +1,54 @@
+{
+  "metrics": {
+    "application_metrics": [
+      "request_rate",
+      "response_time",
+      "error_rate",
+      "throughput",
+      "active_users",
+      "conversion_rate"
+    ],
+    "infrastructure_metrics": [
+      "cpu_utilization",
+      "memory_utilization",
+      "disk_usage",
+      "network_io",
+      "database_connections",
+      "cache_hit_rate"
+    ],
+    "business_metrics": [
+      "dna_sequences_processed",
+      "images_encoded",
+      "api_usage",
+      "cost_per_request"
+    ]
+  },
+  "alerting": {
+    "channels": [
+      "email",
+      "slack",
+      "pagerduty"
+    ],
+    "severity_levels": [
+      "info",
+      "warning",
+      "critical"
+    ],
+    "escalation_policy": {
+      "warning": "5_minutes",
+      "critical": "1_minute"
+    }
+  },
+  "dashboards": {
+    "executive_dashboard": true,
+    "operational_dashboard": true,
+    "developer_dashboard": true,
+    "compliance_dashboard": true
+  },
+  "log_aggregation": {
+    "centralized_logging": true,
+    "log_retention_days": 90,
+    "real_time_search": true,
+    "anomaly_detection": true
+  }
+}
