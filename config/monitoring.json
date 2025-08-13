@@ -1,0 +1,23 @@
+{
+  "metrics_collection": {
+    "enabled": true,
+    "interval_seconds": 60,
+    "retention_days": 30
+  },
+  "health_checks": {
+    "enabled": true,
+    "interval_seconds": 30,
+    "timeout_seconds": 10
+  },
+  "alerts": {
+    "memory_usage_threshold": 80,
+    "cpu_usage_threshold": 90,
+    "error_rate_threshold": 5,
+    "response_time_threshold": 5000
+  },
+  "logging": {
+    "level": "INFO",
+    "rotation": "daily",
+    "retention_days": 7
+  }
+}
