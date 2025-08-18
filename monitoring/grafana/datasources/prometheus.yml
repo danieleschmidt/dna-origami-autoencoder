@@ -1,0 +1,71 @@
+# Grafana datasource configuration for Prometheus
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    editable: true
+    jsonData:
+      timeInterval: 15s
+      queryTimeout: 60s
+      httpMethod: POST
+      customQueryParameters: ""
+      manageAlerts: true
+      alertmanagerUid: ""
+    secureJsonData: {}
+    version: 1
+    uid: prometheus_uid
+
+  - name: Prometheus-Long-Term
+    type: prometheus
+    access: proxy
+    url: http://prometheus-remote-storage:9201
+    isDefault: false
+    editable: true
+    jsonData:
+      timeInterval: 1m
+      queryTimeout: 300s
+      httpMethod: POST
+      manageAlerts: false
+    version: 1
+    uid: prometheus_long_term_uid
+
+  - name: Jaeger
+    type: jaeger
+    access: proxy
+    url: http://jaeger:16686
+    isDefault: false
+    editable: true
+    jsonData:
+      tracesToLogs:
+        datasourceUid: loki_uid
+        tags: ['job', 'instance', 'pod', 'namespace']
+        mappedTags: [
+          {
+            key: 'service.name',
+            value: 'job'
+          }
+        ]
+        mapTagNamesEnabled: false
+        spanStartTimeShift: '-1h'
+        spanEndTimeShift: '1h'
+    version: 1
+    uid: jaeger_uid
+
+  - name: Loki
+    type: loki
+    access: proxy
+    url: http://loki:3100
+    isDefault: false
+    editable: true
+    jsonData:
+      derivedFields:
+        - datasourceUid: jaeger_uid
+          matcherRegex: "trace_id=(\\w+)"
+          name: "TraceID"
+          url: "$${__value.raw}"
+    version: 1
+    uid: loki_uid

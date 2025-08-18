@@ -1,0 +1,269 @@
+# Prometheus alerting rules for DNA-Origami-AutoEncoder
+# Comprehensive alerts for application health and performance
+
+groups:
+  # =============================================================================
+  # Application Health Alerts
+  # =============================================================================
+  - name: dna_origami_ae_health
+    rules:
+      - alert: ApplicationDown
+        expr: up{job="dna-origami-ae-app"} == 0
+        for: 30s
+        labels:
+          severity: critical
+          component: application
+        annotations:
+          summary: "DNA-Origami-AutoEncoder application is down"
+          description: "The main application has been down for more than 30 seconds"
+          runbook_url: "https://docs.example.com/runbooks/app-down"
+
+      - alert: JupyterLabDown
+        expr: up{job="jupyter-lab"} == 0
+        for: 5m
+        labels:
+          severity: warning
+          component: jupyter
+        annotations:
+          summary: "Jupyter Lab is not responding"
+          description: "Jupyter Lab has been unreachable for 5 minutes"
+
+      - alert: HighMemoryUsage
+        expr: (container_memory_usage_bytes{name="dna-origami-ae-app"} / container_spec_memory_limit_bytes{name="dna-origami-ae-app"}) * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+          component: application
+        annotations:
+          summary: "High memory usage detected"
+          description: "Application memory usage is above 85% for 5 minutes"
+
+      - alert: HighCPUUsage
+        expr: rate(container_cpu_usage_seconds_total{name="dna-origami-ae-app"}[5m]) * 100 > 80
+        for: 10m
+        labels:
+          severity: warning
+          component: application
+        annotations:
+          summary: "High CPU usage detected"
+          description: "Application CPU usage is above 80% for 10 minutes"
+
+  # =============================================================================
+  # Scientific Computing Alerts
+  # =============================================================================
+  - name: dna_origami_ae_scientific
+    rules:
+      - alert: DNAEncodingErrorRate
+        expr: rate(dna_encoding_errors_total[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: warning
+          component: encoding
+        annotations:
+          summary: "High DNA encoding error rate"
+          description: "DNA encoding error rate is above 10% for 2 minutes"
+
+      - alert: SimulationFailureRate
+        expr: rate(simulation_failures_total[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+          component: simulation
+        annotations:
+          summary: "High simulation failure rate"
+          description: "Simulation failure rate is above 5% for 5 minutes"
+
+      - alert: ModelInferenceLatency
+        expr: histogram_quantile(0.95, rate(model_inference_duration_seconds_bucket[5m])) > 1.0
+        for: 3m
+        labels:
+          severity: warning
+          component: neural_network
+        annotations:
+          summary: "High model inference latency"
+          description: "95th percentile inference latency is above 1 second for 3 minutes"
+
+      - alert: GPUUtilizationLow
+        expr: nvidia_gpu_utilization_gpu{instance="gpu-exporter:9445"} < 20
+        for: 15m
+        labels:
+          severity: info
+          component: gpu
+        annotations:
+          summary: "Low GPU utilization"
+          description: "GPU utilization has been below 20% for 15 minutes"
+
+      - alert: GPUMemoryHigh
+        expr: (nvidia_gpu_memory_used_bytes / nvidia_gpu_memory_total_bytes) * 100 > 90
+        for: 5m
+        labels:
+          severity: critical
+          component: gpu
+        annotations:
+          summary: "GPU memory usage critical"
+          description: "GPU memory usage is above 90% for 5 minutes"
+
+  # =============================================================================
+  # Data Pipeline Alerts
+  # =============================================================================
+  - name: dna_origami_ae_pipeline
+    rules:
+      - alert: DataProcessingBacklog
+        expr: data_processing_queue_size > 1000
+        for: 10m
+        labels:
+          severity: warning
+          component: data_pipeline
+        annotations:
+          summary: "Data processing backlog detected"
+          description: "Data processing queue has more than 1000 items for 10 minutes"
+
+      - alert: ImageEncodingThroughputLow
+        expr: rate(images_encoded_total[5m]) * 60 < 10
+        for: 5m
+        labels:
+          severity: warning
+          component: encoding
+        annotations:
+          summary: "Low image encoding throughput"
+          description: "Image encoding rate is below 10 per minute for 5 minutes"
+
+      - alert: OrigamiDesignFailures
+        expr: rate(origami_design_failures_total[5m]) > 0.1
+        for: 3m
+        labels:
+          severity: warning
+          component: design
+        annotations:
+          summary: "High origami design failure rate"
+          description: "Origami design failure rate is above 10% for 3 minutes"
+
+  # =============================================================================
+  # Infrastructure Alerts
+  # =============================================================================
+  - name: dna_origami_ae_infrastructure
+    rules:
+      - alert: RedisDown
+        expr: up{job="redis"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          component: redis
+        annotations:
+          summary: "Redis is down"
+          description: "Redis cache service is not responding"
+
+      - alert: PostgreSQLDown
+        expr: up{job="postgres"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          component: database
+        annotations:
+          summary: "PostgreSQL is down"
+          description: "PostgreSQL database is not responding"
+
+      - alert: DiskSpaceHigh
+        expr: (node_filesystem_size_bytes - node_filesystem_avail_bytes) / node_filesystem_size_bytes * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+          component: storage
+        annotations:
+          summary: "High disk space usage"
+          description: "Disk space usage is above 85% for 5 minutes"
+
+      - alert: NetworkErrorsHigh
+        expr: rate(node_network_receive_errs_total[5m]) > 0.01
+        for: 5m
+        labels:
+          severity: warning
+          component: network
+        annotations:
+          summary: "High network errors"
+          description: "Network error rate is elevated for 5 minutes"
+
+  # =============================================================================
+  # Security Alerts
+  # =============================================================================
+  - name: dna_origami_ae_security
+    rules:
+      - alert: UnauthorizedAccess
+        expr: rate(http_requests_total{code=~"4.*"}[5m]) > 1
+        for: 2m
+        labels:
+          severity: warning
+          component: security
+        annotations:
+          summary: "High rate of unauthorized access attempts"
+          description: "4xx HTTP errors are elevated, possible unauthorized access"
+
+      - alert: SecurityVulnerabilityDetected
+        expr: security_vulnerabilities_total > 0
+        for: 0s
+        labels:
+          severity: critical
+          component: security
+        annotations:
+          summary: "Security vulnerability detected"
+          description: "Security scan has detected vulnerabilities"
+
+  # =============================================================================
+  # Performance Alerts
+  # =============================================================================
+  - name: dna_origami_ae_performance
+    rules:
+      - alert: HTTPResponseTimeHigh
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 2.0
+        for: 5m
+        labels:
+          severity: warning
+          component: api
+        annotations:
+          summary: "High HTTP response time"
+          description: "95th percentile HTTP response time is above 2 seconds"
+
+      - alert: DatabaseConnectionPoolExhausted
+        expr: database_connections_active / database_connections_max > 0.9
+        for: 5m
+        labels:
+          severity: critical
+          component: database
+        annotations:
+          summary: "Database connection pool nearly exhausted"
+          description: "Database connection usage is above 90%"
+
+      - alert: TrainingJobStalled
+        expr: increase(training_epochs_completed_total[30m]) == 0 and training_job_active == 1
+        for: 30m
+        labels:
+          severity: warning
+          component: training
+        annotations:
+          summary: "Training job appears stalled"
+          description: "No training progress detected for 30 minutes"
+
+  # =============================================================================
+  # Business Logic Alerts
+  # =============================================================================
+  - name: dna_origami_ae_business
+    rules:
+      - alert: ExperimentSuccessRateLow
+        expr: (rate(experiments_successful_total[1h]) / rate(experiments_total[1h])) * 100 < 80
+        for: 1h
+        labels:
+          severity: warning
+          component: experiments
+        annotations:
+          summary: "Low experiment success rate"
+          description: "Experiment success rate has been below 80% for 1 hour"
+
+      - alert: DataQualityIssues
+        expr: rate(data_validation_failures_total[10m]) > 0.05
+        for: 10m
+        labels:
+          severity: warning
+          component: data_quality
+        annotations:
+          summary: "Data quality issues detected"
+          description: "Data validation failure rate is above 5%"
