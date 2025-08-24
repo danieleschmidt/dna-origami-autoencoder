@@ -16,6 +16,7 @@ sys.path.insert(0, '.')
 
 import numpy as np
 from fastapi import FastAPI, HTTPException, UploadFile, File, BackgroundTasks
+import uvicorn
 from fastapi.middleware.cors import CORSMiddleware  
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
