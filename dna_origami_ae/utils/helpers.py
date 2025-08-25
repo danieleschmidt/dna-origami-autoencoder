@@ -3,6 +3,7 @@
 import time
 import hashlib
 import json
+import logging
 import numpy as np
 from typing import Any, Dict, List, Optional, Tuple, Union, Callable
 from pathlib import Path
@@ -11,6 +12,19 @@ from functools import wraps
 from ..models.dna_sequence import DNASequence
 from ..models.origami_structure import OrigamiStructure
 from ..models.image_data import ImageData
+
+# Setup logger
+logger = logging.getLogger(__name__)
+
+def serialize_numpy(obj):
+    """Serialize numpy arrays to JSON-compatible format."""
+    if isinstance(obj, np.ndarray):
+        return obj.tolist()
+    elif isinstance(obj, np.integer):
+        return int(obj)
+    elif isinstance(obj, np.floating):
+        return float(obj)
+    return obj
 
 
 def timing_decorator(func: Callable) -> Callable:

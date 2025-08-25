@@ -1,14 +1,12 @@
 """DNA origami design module for creating scaffold and staple structures."""
 
-# Basic design functionality - full implementation in Generation 2
-# from .origami_designer import OrigamiDesigner, DesignParameters
-# from .routing_algorithm import RoutingAlgorithm, HoneycombRouter
-# from .shape_library import ShapeLibrary
+# Basic design functionality - enabled in Generation 3
+from .origami_designer import OrigamiDesigner
+from .routing_algorithm import RoutingAlgorithm
+from .shape_library import ShapeLibrary
 
 __all__ = [
-    # "OrigamiDesigner",
-    # "DesignParameters", 
-    # "RoutingAlgorithm",
-    # "HoneycombRouter",
-    # "ShapeLibrary",
+    "OrigamiDesigner",
+    "RoutingAlgorithm", 
+    "ShapeLibrary",
 ]
