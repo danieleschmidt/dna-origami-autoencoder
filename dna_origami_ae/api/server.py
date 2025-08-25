@@ -801,6 +801,10 @@ def create_app() -> FastAPI:
     return app
 
 
+# Create app instance for easy import
+app = create_app()
+
+
 def run_server(host: str = "0.0.0.0", port: int = 8000, workers: int = 1):
     """Run the API server."""
     

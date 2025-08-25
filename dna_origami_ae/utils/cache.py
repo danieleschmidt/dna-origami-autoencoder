@@ -410,6 +410,11 @@ class CacheManager:
 cache_manager = CacheManager()
 
 
+def get_cache_manager() -> CacheManager:
+    """Get the global cache manager instance."""
+    return cache_manager
+
+
 # Convenient caching decorators for specific use cases
 def cache_sequence_analysis(ttl: float = 3600):
     """Cache sequence analysis results for 1 hour."""
