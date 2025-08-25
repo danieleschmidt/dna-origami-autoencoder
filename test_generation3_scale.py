@@ -68,7 +68,7 @@ def origami_folding_simulation(sequence: str) -> dict:
         'folded': stability > 0.3
     }
 
-async def test_generation3_scale():
+def test_generation3_scale():
     """Test Generation 3 scaling capabilities."""
     print("⚡ DNA-Origami-AutoEncoder Generation 3 Scale Test")
     print("=" * 70)
