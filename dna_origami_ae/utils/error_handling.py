@@ -146,6 +146,18 @@ class ErrorHandler:
         self.max_retry_attempts = 3
         self.retry_delay = 1.0  # seconds
         
+        # Security: Sensitive data patterns to redact from logs
+        import re
+        self.sensitive_patterns = [
+            re.compile(r'password\w*[:\s=]*[\w\d]+', re.IGNORECASE),
+            re.compile(r'token[:\s=]*[\w\d]+', re.IGNORECASE),
+            re.compile(r'key[:\s=]*[\w\d]+', re.IGNORECASE),
+            re.compile(r'secret[:\s=]*[\w\d]+', re.IGNORECASE),
+            re.compile(r'api[_\-\s]*key[:\s=]*[\w\d]+', re.IGNORECASE),
+            re.compile(r'\d{4}[-\s]?\d{4}[-\s]?\d{4}[-\s]?\d{4}'),  # Credit cards
+            re.compile(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b')  # Emails
+        ]
+        
     def register_recovery_strategy(self, error_type: Type[Exception], 
                                  strategy: Callable[[Exception], Any]) -> None:
         """Register a recovery strategy for a specific error type."""
@@ -202,15 +214,23 @@ class ErrorHandler:
         if context:
             error_info["context"] = context
             
-        # Log with full traceback for debugging
+        # Log with sanitized error message for security
+        sanitized_error = self._sanitize_error_message(str(error))
         self.logger.log(
             log_level,
-            f"Error occurred: {error}",
+            f"Error occurred: {sanitized_error}",
             extra={
                 "error_info": error_info,
                 "traceback": traceback.format_exc()
             }
         )
+        
+    def _sanitize_error_message(self, message: str) -> str:
+        """Remove sensitive data from error messages."""
+        sanitized = message
+        for pattern in self.sensitive_patterns:
+            sanitized = pattern.sub('[REDACTED]', sanitized)
+        return sanitized
         
     def _severity_to_log_level(self, severity: ErrorSeverity) -> int:
         """Convert error severity to logging level."""
