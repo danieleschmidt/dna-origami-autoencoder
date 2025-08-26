@@ -1,8 +1,14 @@
 """Health monitoring and system diagnostics for DNA origami encoding."""
 
 import time
-import psutil
 import threading
+# Optional psutil import
+try:
+    import psutil
+    PSUTIL_AVAILABLE = True
+except ImportError:
+    PSUTIL_AVAILABLE = False
+    psutil = None
 import json
 import numpy as np
 from typing import Dict, List, Any, Optional, Callable
@@ -177,10 +183,17 @@ class HealthMonitor:
     
     def _collect_metrics(self) -> HealthMetrics:
         """Collect current system metrics."""
-        # System metrics
-        cpu_percent = psutil.cpu_percent(interval=1)
-        memory = psutil.virtual_memory()
-        disk = psutil.disk_usage('/')
+        # System metrics (with graceful fallback)
+        if PSUTIL_AVAILABLE:
+            cpu_percent = psutil.cpu_percent(interval=1)
+            memory = psutil.virtual_memory()
+            disk = psutil.disk_usage('/')
+            memory_percent = memory.percent
+            disk_percent = disk.percent
+        else:
+            cpu_percent = 0.0
+            memory_percent = 0.0
+            disk_percent = 0.0
         
         # GPU metrics
         gpu_memory_percent = 0.0
@@ -208,9 +221,9 @@ class HealthMonitor:
         return HealthMetrics(
             timestamp=datetime.now(),
             cpu_percent=cpu_percent,
-            memory_percent=memory.percent,
-            memory_used_mb=memory.used / (1024 * 1024),
-            disk_usage_percent=disk.percent,
+            memory_percent=memory_percent,
+            memory_used_mb=memory.used / (1024 * 1024) if PSUTIL_AVAILABLE else 0.0,
+            disk_usage_percent=disk_percent,
             active_threads=threading.active_count(),
             gpu_available=self.gpu_available,
             gpu_memory_percent=gpu_memory_percent,
@@ -422,10 +435,10 @@ class HealthMonitor:
             ],
             'operation_statistics': self.operation_stats.copy(),
             'system_info': {
-                'cpu_count': psutil.cpu_count(),
-                'total_memory_gb': psutil.virtual_memory().total / (1024**3),
+                'cpu_count': psutil.cpu_count() if PSUTIL_AVAILABLE else 0,
+                'total_memory_gb': psutil.virtual_memory().total / (1024**3) if PSUTIL_AVAILABLE else 0.0,
                 'gpu_available': self.gpu_available,
-                'python_version': f"{psutil.PROCFS_PATH}"  # placeholder
+                'psutil_available': PSUTIL_AVAILABLE
             }
         }
         
