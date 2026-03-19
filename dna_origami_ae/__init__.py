@@ -1,44 +1,27 @@
 """
-DNA-Origami-AutoEncoder: A groundbreaking wet-lab ML framework that encodes 
-images into self-assembling DNA origami structures and decodes them using 
-transformer models trained on simulated base-pair kinetics.
+DNA Origami Autoencoder
+=======================
+
+Encode digital data as DNA nucleotide sequences, simulate the noise introduced
+by DNA synthesis / sequencing / self-assembly, and decode back to the original
+data using a transformer-based neural network.
+
+Inspired by real DNA storage research:
+  - Church et al. (2012) Science – first practical DNA data storage
+  - Goldman et al. (2013) Nature – 739 kB in synthetic DNA
+  - Organick et al. (2018) Nature Biotechnology – random access in DNA pools
+  - Microsoft / Twist Bioscience – automated DNA storage pipeline
+
+Components
+----------
+DNAEncoder         : binary data → nucleotide sequences (with Hamming ECC)
+OrigamiSimulator   : introduce realistic sequencing / assembly errors
+DNADecoder         : transformer that reconstructs data from noisy sequences
 """
 
-__version__ = "0.1.0"
-__author__ = "Daniel Schmidt"
+from .encoder import DNAEncoder
+from .simulator import OrigamiSimulator
+from .decoder import DNADecoder
 
-# Core API exports - Generation 2: Add robustness
-try:
-    from .models.dna_sequence import DNASequence
-    from .models.image_data import ImageData
-    from .models.origami_structure import OrigamiStructure
-    
-    # Generation 2: Robust modules
-    from .utils.error_handling import DNAEncodingError, ValidationError
-    from .utils.health_monitoring import HealthMonitor, performance_monitor
-    from .reliability.circuit_breaker import CircuitBreaker
-    from .reliability.fault_tolerance import FaultTolerantProcessor
-    
-    __all__ = [
-        # Models
-        "DNASequence",
-        "ImageData", 
-        "OrigamiStructure",
-        # Robustness
-        "DNAEncodingError",
-        "ValidationError", 
-        "HealthMonitor",
-        "performance_monitor",
-        "CircuitBreaker",
-        "FaultTolerantProcessor",
-    ]
-except ImportError as e:
-    print(f"⚠️  Generation 2 dependencies missing: {e}")
-    # Fallback to Generation 1
-    try:
-        from .models.dna_sequence import DNASequence
-        from .models.image_data import ImageData
-        from .models.origami_structure import OrigamiStructure
-        __all__ = ["DNASequence", "ImageData", "OrigamiStructure"]
-    except ImportError:
-        __all__ = []
+__all__ = ["DNAEncoder", "OrigamiSimulator", "DNADecoder"]
+__version__ = "1.0.0"

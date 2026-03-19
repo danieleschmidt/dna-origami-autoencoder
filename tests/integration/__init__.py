@@ -1,1 +1,0 @@
-"""Integration tests for DNA-Origami-AutoEncoder workflows."""
